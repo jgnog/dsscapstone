@@ -34,3 +34,9 @@ vignettes/*.pdf
 
 # Data files for the project
 data/*
+
+# Ignore database files created by the tm package
+*.db
+
+# Ignore notes file
+notas.md
