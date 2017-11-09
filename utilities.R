@@ -18,20 +18,22 @@ random.text.file.sample <- function(filepath, proportion.to.keep) {
   sample
 }
 
-PROPORTION.OF.SANDBOX.DATA <- 0.001
-en_US.docs.location <- c("data/en_US")
-en_US.documents <- c("en_US.blogs.txt",
-                     "en_US.news.txt",
-                     "en_US.twitter.txt")
 
-en_US.sandbox.location <- file.path(en_US.docs.location, "sandbox")
-dir.create(en_US.sandbox.location, showWarnings = FALSE)
+create_sandbox_corpus <- function(proportion) {
+    en_US.docs.location <- c("data/en_US")
+    en_US.documents <- c("en_US.blogs.txt",
+                         "en_US.news.txt",
+                         "en_US.twitter.txt")
+    
+    en_US.sandbox.location <- file.path(en_US.docs.location, "sandbox")
+    dir.create(en_US.sandbox.location, showWarnings = FALSE)
 
-set.seed(12345678)
-for (i in seq_along(en_US.documents)) {
-  full.doc.path <- file.path(en_US.docs.location, en_US.documents[i])
-  sandbox.doc <- random.text.file.sample(full.doc.path, PROPORTION.OF.SANDBOX.DATA)
-  sandbox.filepath <- file.path(en_US.sandbox.location, en_US.documents[i])
-  writeLines(sandbox.doc, sandbox.filepath)
-  rm(sandbox.doc)
+    set.seed(12345678)
+    for (i in seq_along(en_US.documents)) {
+      full.doc.path <- file.path(en_US.docs.location, en_US.documents[i])
+      sandbox.doc <- random.text.file.sample(full.doc.path, proportion)
+      sandbox.filepath <- file.path(en_US.sandbox.location, en_US.documents[i])
+      writeLines(sandbox.doc, sandbox.filepath)
+      rm(sandbox.doc)
+    }
 }
