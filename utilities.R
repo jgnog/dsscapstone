@@ -37,3 +37,10 @@ create_sandbox_corpus <- function(proportion) {
       rm(sandbox.doc)
     }
 }
+
+count_lines <- function(filepath) {
+    call <- paste("wc -l", filepath, sep = " ")
+    call_result <- system(call, intern = TRUE)
+    n_lines <- strsplit(call_result, " ")[[1]][1]
+    as.integer(n_lines)
+}
