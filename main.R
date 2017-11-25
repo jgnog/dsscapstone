@@ -107,7 +107,7 @@ write_ngrams <- function(sentence,
                          unigrams.file,
                          bigrams.file,
                          trigrams.file) {
-     tokens <- scan_tokenizer(sentence[i])
+     tokens <- scan_tokenizer(sentence)
      write(tokens, unigrams.file)
      write(ngrams_of_sentence(sentence, 2), bigrams.file)
      write(ngrams_of_sentence(sentence, 3), trigrams.file)
@@ -127,7 +127,6 @@ if (!file.exists(paste(base.dir, "sentences/sentences.txt", sep = "/"))) {
     close(sentences)
 }
 
-# Create training, testing and holdout datasets
 
 if (!file.exists(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))) {
     sentences.file <- paste(base.dir, "sentences/sentences.txt", sep = "/")
@@ -155,7 +154,16 @@ if (!file.exists(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))) {
         nolinesread_previous <- nolinesread_previous + nolinesread
         linesread <- readLines(sentences, CHUNKSIZE)
     }
-    close(sentences.file)
+    close(sentences)
     close(test_sentences)
     close(train_sentences)
 }
+
+
+dir.create(paste(base.dir, "ngrams", sep = "/"))
+unigrams.file <- file(paste(base.dir, "ngrams/unigrams.txt", sep = "/"), "w")
+bigrams.file <- file(paste(base.dir, "ngrams/bigrams.txt", sep = "/"), "w")
+trigrams.file <- file(paste(base.dir, "ngrams/trigrams.txt", sep = "/"), "w"))
+train_sentences <- readLines(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))  
+sapply(train_sentences, write_ngrams, unigrams.file,
+       bigrams.file, trigrams.file)
