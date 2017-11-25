@@ -1,7 +1,9 @@
 library(tm)
 library(openNLP)
 library(rlist)
+library(caret)
 
+source("utilities.R")
 
 # Set this constant to TRUE if you want to work with a smaller dataset
 # for experimenting purposes
@@ -122,4 +124,38 @@ if (!file.exists(paste(base.dir, "sentences/sentences.txt", sep = "/"))) {
             write_sentences(line, sentences)
         }
     }
+    close(sentences)
+}
+
+# Create training, testing and holdout datasets
+
+if (!file.exists(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))) {
+    sentences.file <- paste(base.dir, "sentences/sentences.txt", sep = "/")
+    n_sentences <- count_lines(sentences.file)
+    set.seed(12345678)
+    training.indices <- createDataPartition(seq(1, n_sentences), p = 0.6)
+    training.indices <- training.indices[[1]]
+
+    train_sentences <- file(paste(base.dir, "sentences/train_sentences.txt", sep = "/"), "w")
+    test_sentences <- file(paste(base.dir, "sentences/test_sentences.txt", sep = "/"), "w")
+    sentences <- file(sentences.file, "r")
+
+    CHUNKSIZE <- 20000
+
+    linesread <- readLines(sentences, CHUNKSIZE)
+    nolinesread_previous <- 0
+    while((nolinesread <- length(linesread)) > 0) {
+        adjusted_training_indices <- training.indices[
+                          training.indices <= nolinesread + nolinesread_previous]
+        adjusted_training_indices <- adjusted_training_indices - nolinesread_previous
+        adjusted_training_indices <- adjusted_training_indices[
+                                               adjusted_training_indices > 0]
+        write(linesread[adjusted_training_indices], train_sentences)
+        write(linesread[-adjusted_training_indices], test_sentences)
+        nolinesread_previous <- nolinesread_previous + nolinesread
+        linesread <- readLines(sentences, CHUNKSIZE)
+    }
+    close(sentences.file)
+    close(test_sentences)
+    close(train_sentences)
 }
