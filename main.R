@@ -160,10 +160,12 @@ if (!file.exists(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))) {
 }
 
 
-dir.create(paste(base.dir, "ngrams", sep = "/"))
-unigrams.file <- file(paste(base.dir, "ngrams/unigrams.txt", sep = "/"), "w")
-bigrams.file <- file(paste(base.dir, "ngrams/bigrams.txt", sep = "/"), "w")
-trigrams.file <- file(paste(base.dir, "ngrams/trigrams.txt", sep = "/"), "w"))
-train_sentences <- readLines(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))  
-sapply(train_sentences, write_ngrams, unigrams.file,
-       bigrams.file, trigrams.file)
+if (!file.exists(paste(base.dir, "ngrams/unigrams.txt", sep = "/"))) {
+    dir.create(paste(base.dir, "ngrams", sep = "/"))
+    unigrams.file <- file(paste(base.dir, "ngrams/unigrams.txt", sep = "/"), "w")
+    bigrams.file <- file(paste(base.dir, "ngrams/bigrams.txt", sep = "/"), "w")
+    trigrams.file <- file(paste(base.dir, "ngrams/trigrams.txt", sep = "/"), "w")
+    train_sentences <- readLines(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))  
+    sapply(train_sentences, write_ngrams, unigrams.file,
+           bigrams.file, trigrams.file)
+}
