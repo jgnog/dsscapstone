@@ -79,7 +79,8 @@ split_sentences <- function(x) {
 # This exception is important in order to keep the contractions
 # typical of the english language (e.g. let's, can't)
 remove_punctuation <- function(x) {
-  gsub("(?!')[[:punct:]]", "", x, perl = TRUE)
+  y <- gsub("(?!')[[:punct:]]", "", x, perl = TRUE)
+  gsub('[^[:alpha:][:space:]\'"«»?()&!,;.:-]', "", y)
 }
  
 insert_sent_annotations <- function(x) {
