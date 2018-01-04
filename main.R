@@ -105,13 +105,15 @@ write_sentences <- function(line, sentences.file) {
 }
 
 write_ngrams <- function(sentence,
-                         unigrams.file,
                          bigrams.file,
                          trigrams.file) {
-     tokens <- scan_tokenizer(sentence)
-     write(tokens, unigrams.file)
      write(ngrams_of_sentence(sentence, 2), bigrams.file)
      write(ngrams_of_sentence(sentence, 3), trigrams.file)
+}
+
+write_unigrams <- function(sentence, unigrams.file) {
+     tokens <- scan_tokenizer(sentence)
+     write(tokens, unigrams.file)
 }
 
 dir.create(paste(base.dir, "sentences", sep = "/"))
@@ -164,9 +166,41 @@ if (!file.exists(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))) {
 if (!file.exists(paste(base.dir, "ngrams/unigrams.txt", sep = "/"))) {
     dir.create(paste(base.dir, "ngrams", sep = "/"))
     unigrams.file <- file(paste(base.dir, "ngrams/unigrams.txt", sep = "/"), "w")
-    bigrams.file <- file(paste(base.dir, "ngrams/bigrams.txt", sep = "/"), "w")
-    trigrams.file <- file(paste(base.dir, "ngrams/trigrams.txt", sep = "/"), "w")
     train_sentences <- readLines(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))  
-    sapply(train_sentences, write_ngrams, unigrams.file,
-           bigrams.file, trigrams.file)
+    sapply(train_sentences, write_unigrams, unigrams.file)
 }
+
+unigrams <- readLines(paste(base.dir, "ngrams/unigrams.txt", sep = "/"))
+words_table <- table(unigrams)
+words_to_replace <- names(words_table[words_table == 1])
+rm(words_table)
+
+replace_with_unk <- function(word) {
+    if (word %in% words_to_replace) {
+        # Remove found word from list of words to replace to make
+        # the search faster
+        words_to_replace <- words_to_replace[!words_to_replace==word]
+        "<UNK>"
+    } else {
+        word
+    }
+}
+
+unigrams <- sapply(unigrams, replace_with_unk)
+# Delete the names of the vector to save memory
+unigrams <- unname(unigrams)
+# Write the list of words with <UNK> to file
+write(unigrams, paste(base.dir, "ngrams/unigrams.txt", sep = "/"))
+
+# Build list of sentences from list of words
+start_of_sentences <- which(unigrams=="<s>")
+end_of_sentences <- which(unigrams=="</s>")
+sentence_from_start_and_end <- function(start, end) {
+    paste(unigrams[start:end], collapse = " ")
+}
+sentences <- mapply(sentence_from_start_and_end,
+                    start_of_sentences,
+                    end_of_sentences)
+sentences <- unname(sentences)
+
+write(sentences, paste(base.dir, "sentences/train_sentences.txt", sep = "/"))
