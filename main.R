@@ -210,3 +210,6 @@ write(sentences, paste(base.dir, "sentences/train_sentences.txt", sep = "/"))
 bigrams.file <- file(paste(base.dir, "ngrams/bigrams.txt", sep = "/"), "w")
 trigrams.file <- file(paste(base.dir, "ngrams/trigrams.txt", sep = "/"), "w")
 sapply(sentences, write_ngrams, bigrams.file, trigrams.file)
+
+# Clear the environment
+rm(list = ls())
