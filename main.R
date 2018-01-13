@@ -204,3 +204,9 @@ sentences <- mapply(sentence_from_start_and_end,
 sentences <- unname(sentences)
 
 write(sentences, paste(base.dir, "sentences/train_sentences.txt", sep = "/"))
+
+# Calculate and write to file the bigrams and trigrams of the
+# training sentences
+bigrams.file <- file(paste(base.dir, "ngrams/bigrams.txt", sep = "/"), "w")
+trigrams.file <- file(paste(base.dir, "ngrams/trigrams.txt", sep = "/"), "w")
+sapply(sentences, write_ngrams, bigrams.file, trigrams.file)
