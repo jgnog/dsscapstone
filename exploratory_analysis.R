@@ -1,5 +1,6 @@
 library(ggplot2)
 library(dplyr)
+library(tm)
 
 # Set this constant to TRUE if you want to work with a smaller dataset
 # for experimenting purposes
@@ -67,6 +68,10 @@ qplot(log(as.vector(trigrams_table_freq)),
 qplot(seq_along(trigrams_table) / length(trigrams_table), cumsum(trigrams_table_freq),
       xlab = "Proportion of the total number of unique trigrams",
       ylab = "Proportion of the total number of trigrams")
+trigrams_table <- table(trigrams)
+trigrams_table <- table(trigrams)
+trigrams_table <- sort(trigrams_table, decreasing = TRUE)
+trigrams_table <- sort(trigrams_table, decreasing = TRUE)
 
 
 head(words_table, n = 20)
@@ -91,4 +96,4 @@ trigrams_table_no_sent_markers <- sort(trigrams_table_no_sent_markers,
 head(trigrams_table_no_sent_markers, n = 20)
 
 # Clear the environment
-rm(list = ls())
+# rm(list = ls())

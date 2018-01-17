@@ -201,9 +201,9 @@ sentence_from_start_and_end <- function(start, end) {
 sentences <- mapply(sentence_from_start_and_end,
                     start_of_sentences,
                     end_of_sentences)
+# Exclude empty sentences
+sentences <- sentences[!sentences == "<s> </s>"]
 sentences <- unname(sentences)
-
-write(sentences, paste(base.dir, "sentences/train_sentences.txt", sep = "/"))
 
 # Calculate and write to file the bigrams and trigrams of the
 # training sentences
@@ -214,4 +214,4 @@ if (!file.exists(paste(base.dir, "ngrams/bigrams.txt", sep = "/"))) {
 }
 
 # Clear the environment
-rm(list = ls())
+# rm(list = ls())
