@@ -40,3 +40,6 @@ data/*
 
 # Ignore notes file
 notas.md
+
+# Ignore profiling logs
+*.out
