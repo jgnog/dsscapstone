@@ -30,13 +30,15 @@ replace_with_unk <- function(word) {
 
 trigrams <- readLines(paste(base.dir, "ngrams/trigrams.txt", sep = "/"))
 # Work with a smaller dataset for experimentation purposes
-trigrams <- trigrams[1:5000]
+trigrams <- trigrams[1:100000]
 
 tokenized_trigrams <- sapply(trigrams, scan_tokenizer, USE.NAMES = FALSE)
 first_bigram_in_trigrams <- apply(tokenized_trigrams[1:2,],
                                   2, paste, collapse = " ")
 third_words <- tokenized_trigrams[3,]
 unique_bigrams <- unique(first_bigram_in_trigrams)
+unique_next_words <- unique(third_words)
+
 
 trigram_matrix <- Matrix(data = 0,
                          nrow = length(unique_bigrams),
