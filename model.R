@@ -32,7 +32,7 @@ replace_with_unk <- function(word) {
 trigrams <- readLines(paste(base.dir, "ngrams/trigrams.txt", sep = "/"))
 # TODO: remove line for smaller dataset
 # Work with a smaller dataset for experimentation purposes
-trigrams <- trigrams[1:5000]
+trigrams <- trigrams[1:100000]
 
 tokenized_trigrams <- sapply(trigrams, scan_tokenizer, USE.NAMES = FALSE)
 first_bigram_in_trigrams <- apply(tokenized_trigrams[1:2,],
