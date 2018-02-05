@@ -1,6 +1,7 @@
 library(tidyverse)
 library(tm)
 library(Matrix)
+library(hashmap)
 
 # Set this constant to TRUE if you want to work with a smaller dataset
 # for experimenting purposes
@@ -29,6 +30,7 @@ replace_with_unk <- function(word) {
 
 
 trigrams <- readLines(paste(base.dir, "ngrams/trigrams.txt", sep = "/"))
+# TODO: remove line for smaller dataset
 # Work with a smaller dataset for experimentation purposes
 trigrams <- trigrams[1:100000]
 
@@ -39,17 +41,24 @@ third_words <- tokenized_trigrams[3,]
 unique_bigrams <- unique(first_bigram_in_trigrams)
 unique_next_words <- unique(third_words)
 
-
 trigram_matrix <- Matrix(data = 0,
                          nrow = length(unique_bigrams),
                          ncol = length(unique_next_words),
                          dimnames = list(unique_bigrams,
                                          unique_next_words))
 
-# TODO: test the idea of using hash tables to make searching the matrix
+# DOING: test the idea of using hash tables to make searching the matrix
 # faster. The idea is creating two hash tables, one for rows and another
 # one for columns. When a value is requested, search the hash tables to get
 # the indices and then use those indices to get the value from the matrix.
+rows.hash <- hashmap(unique_bigrams, 2:length(unique_bigrams))
+columns.hash <- hashmap(unique_next_words, 1:length(unique_next_words))
+get.matrix.indices <- function(bigram, next.word) {
+    i <- rows.hash[[bigram]] 
+    j <- columns.hash[[next.word]] 
+    c(i, j)
+}
+
 # TODO: define a new class that inherits from sparseMatrix but defines a new
 # method to get a value from the matrix. This new method will use hash tables
 # (one for rows and another one for columns) to make searching the matrix
@@ -58,9 +67,9 @@ populate_trigram_matrix <- function(trigram) {
     tokens <- scan_tokenizer(trigram)
     bigram <- paste(tokens[1:2], collapse = " ")
     next.word <- tokens[3]
-    trigram_matrix[bigram, next.word] <<- trigram_matrix[bigram, next.word] + 1
+    indices <- get.matrix.indices(bigram, next.word)
+    trigram_matrix[indices[1], indices[2]] <<- trigram_matrix[indices[1], indices[2]] + 1
 }
-
 
 trigrams %>% walk(populate_trigram_matrix)
 
