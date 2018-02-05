@@ -51,7 +51,7 @@ trigram_matrix <- Matrix(data = 0,
 # faster. The idea is creating two hash tables, one for rows and another
 # one for columns. When a value is requested, search the hash tables to get
 # the indices and then use those indices to get the value from the matrix.
-rows.hash <- hashmap(unique_bigrams, 1:length(unique_bigrams))
+rows.hash <- hashmap(unique_bigrams, 2:length(unique_bigrams))
 columns.hash <- hashmap(unique_next_words, 1:length(unique_next_words))
 get.matrix.indices <- function(bigram, next.word) {
     i <- rows.hash[[bigram]] 
