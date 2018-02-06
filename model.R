@@ -30,9 +30,10 @@ replace_with_unk <- function(word) {
 
 
 trigrams <- readLines(paste(base.dir, "ngrams/trigrams.txt", sep = "/"))
+
 # TODO: remove line for smaller dataset
 # Work with a smaller dataset for experimentation purposes
-trigrams <- trigrams[1:100000]
+trigrams <- trigrams[1:5000]
 
 tokenized_trigrams <- sapply(trigrams, scan_tokenizer, USE.NAMES = FALSE)
 first_bigram_in_trigrams <- apply(tokenized_trigrams[1:2,],
@@ -47,11 +48,7 @@ trigram_matrix <- Matrix(data = 0,
                          dimnames = list(unique_bigrams,
                                          unique_next_words))
 
-# DOING: test the idea of using hash tables to make searching the matrix
-# faster. The idea is creating two hash tables, one for rows and another
-# one for columns. When a value is requested, search the hash tables to get
-# the indices and then use those indices to get the value from the matrix.
-rows.hash <- hashmap(unique_bigrams, 2:length(unique_bigrams))
+rows.hash <- hashmap(unique_bigrams, 1:length(unique_bigrams))
 columns.hash <- hashmap(unique_next_words, 1:length(unique_next_words))
 get.matrix.indices <- function(bigram, next.word) {
     i <- rows.hash[[bigram]] 
@@ -59,10 +56,6 @@ get.matrix.indices <- function(bigram, next.word) {
     c(i, j)
 }
 
-# TODO: define a new class that inherits from sparseMatrix but defines a new
-# method to get a value from the matrix. This new method will use hash tables
-# (one for rows and another one for columns) to make searching the matrix
-# faster.
 populate_trigram_matrix <- function(trigram) {
     tokens <- scan_tokenizer(trigram)
     bigram <- paste(tokens[1:2], collapse = " ")
@@ -72,6 +65,7 @@ populate_trigram_matrix <- function(trigram) {
 }
 
 trigrams %>% walk(populate_trigram_matrix)
+trigram_matrix <- trigram_matrix / rowSums(trigram_matrix)
 
 
 # # Clean the environment
