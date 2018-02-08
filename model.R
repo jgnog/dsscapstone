@@ -14,30 +14,15 @@ if (SANDBOX) {
     base.dir <- "data/en_US"
 }
 
-# unigrams <- readLines(paste(base.dir, "ngrams/unigrams.txt", sep = "/"))
-# words_table <- table(unigrams)
-# words_table <- sort(words_table, decreasing = TRUE)
-# # Keeping the environment as lean as possible
-# rm(unigrams)
-
-# replace_with_unk <- function(word) {
-#     if (word %in% names(words_table)) {
-#         "<UNK>"
-#     } else {
-#         word
-#     }
-# }
-
-# TODO: generalize trigram matrix for bigrams and unigrams
 unigrams <- readLines(paste(base.dir, "ngrams/unigrams.txt", sep = "/"))
 bigrams <- readLines(paste(base.dir, "ngrams/bigrams.txt", sep = "/"))
 trigrams <- readLines(paste(base.dir, "ngrams/trigrams.txt", sep = "/"))
 
 # TODO: remove line for smaller dataset
 # Work with a smaller dataset for experimentation purposes
-unigrams <- unigrams[1:10]
-bigrams <- bigrams[1:10]
-trigrams <- trigrams[1:10]
+# unigrams <- unigrams[1:10]
+# bigrams <- bigrams[1:10]
+# trigrams <- trigrams[1:10]
 
 ngrams <- list(unigrams = unigrams,
                bigrams = bigrams,
@@ -130,6 +115,7 @@ populate_matrix <- function(ngram, type_of_ngram) {
     indices <- get_matrix_indices(decomp_ngram$precedent,
                                   decomp_ngram$subsequent)
 
+    # TODO: this is ugly! find a better way to do this.
     if (type_of_ngram == "bigram") {
         ngram_mt$bigrams[indices[1], indices[2]] <<- ngram_mt$bigrams[indices[1], indices[2]] + 1
     } else if (type_of_ngram == "trigram") {
@@ -143,67 +129,3 @@ ngrams$trigrams %>% walk(populate_matrix, "trigram")
 
 ngram_mt$bigrams <- ngram_mt$bigrams / rowSums(ngram_mt$bigrams)
 ngram_mt$trigrams <- ngram_mt$bigrams / rowSums(ngram_mt$bigrams)
-
-
-    
-
-
-
-                          
-
-
-# tokenized_trigrams <- sapply(trigrams, scan_tokenizer, USE.NAMES = FALSE)
-# first_bigram_in_trigrams <- apply(tokenized_trigrams[1:2,],
-#                                   2, paste, collapse = " ")
-# third_words <- tokenized_trigrams[3,]
-# unique_bigrams <- unique(first_bigram_in_trigrams)
-# unique_next_words <- unique(third_words)
-
-trigram_matrix <- Matrix(data = 0,
-                         nrow = length(unique_bigrams),
-                         ncol = length(unique_next_words),
-                         dimnames = list(unique_bigrams,
-                                         unique_next_words))
-
-rows.hash <- hashmap(unique_bigrams, 1:length(unique_bigrams))
-columns.hash <- hashmap(unique_next_words, 1:length(unique_next_words))
-get.matrix.indices <- function(bigram, next.word) {
-    i <- rows.hash[[bigram]] 
-    j <- columns.hash[[next.word]] 
-    c(i, j)
-}
-
-populate_trigram_matrix <- function(trigram) {
-    tokens <- scan_tokenizer(trigram)
-    bigram <- paste(tokens[1:2], collapse = " ")
-    next.word <- tokens[3]
-    indices <- get.matrix.indices(bigram, next.word)
-    trigram_matrix[indices[1], indices[2]] <<- trigram_matrix[indices[1], indices[2]] + 1
-}
-
-trigrams %>% walk(populate_trigram_matrix)
-trigram_matrix <- trigram_matrix / rowSums(trigram_matrix)
-
-
-# # Clean the environment
-# rm(tokenized_trigrams, trigrams, first_bigram_in_trigrams, third_words)
-
-# trigrams_starting_with <- function(bigram) {
-    
-
-# }
-
-# last_word <- function(text) {
-#     x <- scan_tokenizer(text)
-#     x[length(x)]
-# }
-
-# trigrams_by_bigram <- sapply(bigrams, trigrams_starting_with)
-
-
-
-# predict_next_word <- function(sentence) {
-#     tokens <- scan_tokenizer(sentence)
-#     tokens <- sapply(tokens, replace_with_unk)
-#     last_bigram <- paste(tail(tokens, 2), collapse = " ")
-# }
