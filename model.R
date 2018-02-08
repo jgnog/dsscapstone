@@ -35,9 +35,9 @@ trigrams <- readLines(paste(base.dir, "ngrams/trigrams.txt", sep = "/"))
 
 # TODO: remove line for smaller dataset
 # Work with a smaller dataset for experimentation purposes
-unigrams <- unigrams[1:5000]
-bigrams <- bigrams[1:5000]
-trigrams <- trigrams[1:5000]
+unigrams <- unigrams[1:10]
+bigrams <- bigrams[1:10]
+trigrams <- trigrams[1:10]
 
 ngrams <- list(unigrams = unigrams,
                bigrams = bigrams,
@@ -55,29 +55,32 @@ decompose_ngram <- function(ngram) {
     # For the first element get all except the last element of vector words
     # and then paste the words together with a space between them.
     # For the second element simply get the last word in the vector words
-    list(paste(words[1:n_words - 1], collapse = " "),
-         words[n_words])
+    list(precedent = paste(words[1:n_words - 1], collapse = " "),
+         subsequent = words[n_words])
 }
 
 
 
 decomposed_ngrams <- list(bigrams = transpose(ngrams$bigrams %>% map(decompose_ngram)),
                           trigrams = transpose(ngrams$trigrams %>% map(decompose_ngram)))
-decomposed_ngrams <- list(unigrams = ngrams$unigrams,
-                          bigrams = list(precedents = flatten_chr(decomposed_ngrams$bigrams[[1]]),
+decomposed_ngrams <- list(bigrams = list(precedents = flatten_chr(decomposed_ngrams$bigrams[[1]]),
                                          subsequents = flatten_chr(decomposed_ngrams$bigrams[[2]])),
                           trigrams = list(precedents = flatten_chr(decomposed_ngrams$trigrams[[1]]),
                                           subsequents = flatten_chr(decomposed_ngrams$trigrams[[2]])))
 
-decomposed_ngrams$unigrams <- unique(unigrams)
 decomposed_ngrams$bigrams <- list(precedents = unique(decomposed_ngrams$bigrams$precedents),
                                   subsequents = unique(decomposed_ngrams$bigrams$subsequents))
 decomposed_ngrams$trigrams <- list(precedents = unique(decomposed_ngrams$trigrams$precedents),
                                    subsequents = unique(decomposed_ngrams$trigrams$subsequents))
 
+# Compute the frequencies of unigrams
+unigrams_count <- as.vector(table(ngrams$unigrams))
+names(unigrams_count) <- sort(unique(ngrams$unigrams))
+unigrams_freq <- unigrams_count / sum(unigrams_count)
+rm(unigrams_count)
 
 
-ngram_mt <- list(unigrams = decomposed_ngrams$unigrams,
+ngram_mt <- list(unigrams = unigrams_freq,
                  bigrams = Matrix(data = 0,
                                   nrow = length(decomposed_ngrams$bigrams$precedents),
                                   ncol = length(decomposed_ngrams$bigrams$subsequents),
@@ -89,7 +92,7 @@ ngram_mt <- list(unigrams = decomposed_ngrams$unigrams,
                                    dimnames = list(decomposed_ngrams$trigrams$precedents,
                                                    decomposed_ngrams$trigrams$subsequents)))
 
-rm(decomposed_ngrams)
+rm(decomposed_ngrams, unigrams_freq)
 
 generate_hash <- function(v) {
     hashmap(v, 1:length(v))
@@ -97,18 +100,18 @@ generate_hash <- function(v) {
 
 matrices_hashes <- list(unigrams = generate_hash(ngram_mt$unigrams),
                         bigrams = list(precedents = generate_hash(rownames(ngram_mt$bigrams)),
-                                       precedents = generate_hash(colnames(ngram_mt$bigrams))),
+                                       subsequents = generate_hash(colnames(ngram_mt$bigrams))),
                         trigrams = list(precedents = generate_hash(rownames(ngram_mt$trigrams)),
-                                        precedents = generate_hash(colnames(ngram_mt$trigrams))))
+                                        subsequents = generate_hash(colnames(ngram_mt$trigrams))))
 
 get_matrix_indices <- function(precedent, subsequent) {
 
     nr_of_words_in_precedent <- length(scan_tokenizer(precedent))
 
     if (nr_of_words_in_precedent == 2) {
-        type_of_ngram <- "trigram"
+        type_of_ngram <- "trigrams"
     } else if (nr_of_words_in_precedent == 1) {
-        type_of_ngram <- "bigram"
+        type_of_ngram <- "bigrams"
     } else {
         return(NULL)
     }
@@ -122,7 +125,24 @@ get_matrix_indices <- function(precedent, subsequent) {
     c(i, j)
 }
 
-for (i in seq_along(ngram_mt)) {
+populate_matrix <- function(ngram, type_of_ngram) {
+    decomp_ngram <- decompose_ngram(ngram)
+    indices <- get_matrix_indices(decomp_ngram$precedent,
+                                  decomp_ngram$subsequent)
+
+    if (type_of_ngram == "bigram") {
+        ngram_mt$bigrams[indices[1], indices[2]] <<- ngram_mt$bigrams[indices[1], indices[2]] + 1
+    } else if (type_of_ngram == "trigram") {
+        ngram_mt$trigrams[indices[1], indices[2]] <<- ngram_mt$trigrams[indices[1], indices[2]] + 1
+    }
+
+}
+
+ngrams$bigrams %>% walk(populate_matrix, "bigram")
+ngrams$trigrams %>% walk(populate_matrix, "trigram")
+
+ngram_mt$bigrams <- ngram_mt$bigrams / rowSums(ngram_mt$bigrams)
+ngram_mt$trigrams <- ngram_mt$bigrams / rowSums(ngram_mt$bigrams)
 
 
     
