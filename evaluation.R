@@ -16,7 +16,11 @@ prob_of_next_word <- function(sentence_words, next_word) {
     }
 
     indices <- get_matrix_indices(sentence_words, next_word)
-    model_matrix[indices[1], indices[2]]
+    # Compute the sum of the counts of the precedent's row
+    # This will be used to compute to transform the count into
+    # a frequency, i.e. a probability
+    row_sum <- sum(model_matrix[indices[1]])
+    model_matrix[indices[1], indices[2]] / row_sum
 }
 
 
