@@ -94,5 +94,3 @@ populate_matrix <- function(ngram) {
 # Count the occurences of each ngram and then divide it by the total counts
 # of each precedent to obtain a frequency
 all_ngrams %>% walk(populate_matrix)
-row_sums <- rowSums(model_matrix)
-model_matrix <- model_matrix / row_sums
