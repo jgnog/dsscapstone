@@ -51,3 +51,11 @@ prob_of_sentence <- function(sentence) {
     2 ^ sentence_probability
 
 }
+
+
+
+# And finally we need a function to calculate the probability of the
+# test corpus.
+prob_of_corpus <- function(sentences) {
+
+}
