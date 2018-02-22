@@ -59,6 +59,10 @@ decomp_ngrams <- all_ngrams %>% map(decompose_ngram) %>% transpose()
 decomp_ngrams$precedent <- flatten_chr(decomp_ngrams$precedent)
 decomp_ngrams$subsequent <- flatten_chr(decomp_ngrams$subsequent)
 
+# Filter out the empty strings
+decomp_ngrams$precedent <- decomp_ngrams$precedent[decomp_ngrams$precedent != ""]
+decomp_ngrams$subsequent <- decomp_ngrams$subsequent[decomp_ngrams$subsequent != ""]
+
 model_matrix <- Matrix(data = 0,
                        nrow = length(unique(decomp_ngrams$precedent)),
                        ncol = length(unique(decomp_ngrams$subsequent)),
@@ -91,6 +95,5 @@ populate_matrix <- function(ngram) {
 
 }
 
-# Count the occurences of each ngram and then divide it by the total counts
-# of each precedent to obtain a frequency
+# Count the occurences of each ngram
 all_ngrams %>% walk(populate_matrix)
