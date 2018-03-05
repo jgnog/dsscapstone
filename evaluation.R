@@ -1,6 +1,15 @@
 # Evaluate using perplexity
 
-source("model.R")
+# Set this constant to TRUE if you want to work with a smaller dataset
+# for experimenting purposes
+# Set this constant to FALSE to work with the full dataset
+SANDBOX <- TRUE
+
+if (SANDBOX) {
+    base.dir <- "data/en_US/sandbox"
+} else {
+    base.dir <- "data/en_US"
+}
 
 # First we need a function to compute the probability of the next word in a
 # sentence
@@ -25,15 +34,15 @@ prob_of_next_word <- function(sentence_words, next_word) {
 
 
 # Then we need a function to compute the probability of a sentence.
-# That will be a product of the probabilities of each word in the sentence.
+# That will be a product of the probabilities of each word in the sentence
 prob_of_sentence <- function(sentence) {
 
     # First we need to break the sentence into words
     words <- scan_tokenizer(sentence)
     n_words <- length(words)
 
-    # Create a vector to hold the results of the probabily calculations for 
-    # each word of the sentence
+    # Create a vector to hold the results of the probabily calculations 
+    # for each word of the sentence
     word_probs <- vector("numeric", n_words - 1)
 
     # Feed a growing sentence into the function prob_of_next_word
@@ -52,10 +61,43 @@ prob_of_sentence <- function(sentence) {
 
 }
 
+# Count the number of unique words in a set of sentences
+size_of_vocab <- function(sentences) {
+    words <- sentences %>% map(scan_tokenizer)    
+    words <- flatten_chr(words)
+    length(unique(words))
+}
 
+# Calculate the perplexity of the test corpus.
+perplexity <- function(sentences) {
+    probs <- sentences %>% map(prob_of_sentence)
+    probs <- log2(probs)
+    
+    size_of_vocab <- size_of_vocab(sentences)
 
-# And finally we need a function to calculate the probability of the
-# test corpus.
-prob_of_corpus <- function(sentences) {
+    2 ^ (sum(probs) / size_of_vocab)
 
 }
+
+# Replace the unseen words in the training vocab with <UNK>
+unigrams <- readLines(paste(base.dir, "ngrams/unigrams.txt", sep = "/"))
+valid_words <- unique(unigrams)
+replace_with_unk <- function(word) {
+    if (!(word %in% valid_words)) {
+        "<UNK>"
+    } else {
+        word
+    }
+}
+
+clean_sentence <- function(sentence) {
+    words <- scan_tokenizer(sentence)
+    words <- map(words, replace_with_unk)
+    paste(words, collapse = " ")
+}
+
+test_sentences <- readLines(paste(base.dir,
+                                  "sentences/test_sentences.txt",
+                                  sep = "/"))
+test_sentences <- map(test_sentences, clean_sentence)
+perplexity <- perplexity(test_sentences)

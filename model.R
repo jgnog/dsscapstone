@@ -26,6 +26,9 @@ trigrams <- readLines(paste(base.dir, "ngrams/trigrams.txt", sep = "/"))
 
 all_ngrams <- c(unigrams, bigrams, trigrams)
 
+# Eliminate any empty strings in the ngrams list
+all_ngrams <- all_ngrams[all_ngrams != ""]
+
 rm(unigrams, bigrams, trigrams)
 
 decompose_ngram <- function(ngram) {
