@@ -21,9 +21,7 @@ random.text.file.sample <- function(filepath, proportion.to.keep) {
 
 create_sandbox_corpus <- function(proportion) {
     en_US.docs.location <- c("data/en_US")
-    en_US.documents <- c("en_US.blogs.txt",
-                         "en_US.news.txt",
-                         "en_US.twitter.txt")
+    en_US.documents <- c("en_US.blogs.txt")
     
     en_US.sandbox.location <- file.path(en_US.docs.location, "sandbox")
     dir.create(en_US.sandbox.location, showWarnings = FALSE)

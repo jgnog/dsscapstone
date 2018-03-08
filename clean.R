@@ -1,7 +1,7 @@
 library(tm)
-library(openNLP)
 library(rlist)
 library(caret)
+library(openNLP)
 
 source("utilities.R")
 
@@ -15,6 +15,8 @@ if (SANDBOX) {
 } else {
     base.dir <- "data/en_US"
 }
+
+# FUNCTION DEFINITIONS
 
 get_clean_corpus <- function(sandbox = FALSE) {
 
@@ -45,11 +47,7 @@ get_clean_corpus <- function(sandbox = FALSE) {
 
         clean.dir <- paste(base.dir, "clean", sep = "/")
         dir.create(clean.dir)
-        writeCorpus(corpus, path=clean.dir,
-                    c("en_US.blogs.txt",
-                      "en_US.news.txt",
-                      "en_US.twitter.txt")
-                    )
+        writeCorpus(corpus, path=clean.dir, c("en_US.blogs.txt"))
     } else {
         clean.dir <- paste(base.dir, "clean", sep = "/")
         if (sandbox) {
@@ -65,14 +63,10 @@ get_clean_corpus <- function(sandbox = FALSE) {
     corpus
 }
 
-corpus <- get_clean_corpus(sandbox = SANDBOX)
-
-
-sent_token_annotator <- Maxent_Sent_Token_Annotator()
-split_sentences <- function(x) {
-  x <- as.String(x)
-  y <- annotate(x, sent_token_annotator)
-  x[y]
+split_sentences <- function(x, annotator) {
+    x <- as.String(x)
+    y <- NLP::annotate(x, annotator)
+    x[y]
 }
 
 # This removes all punctuation except for apostrophes
@@ -98,8 +92,8 @@ ngrams_of_sentence <- function(sentence, n) {
   vapply(ngrams(tokens_sent, n), paste, "", collapse = " ")
 }
 
-write_sentences <- function(line, sentences.file) {
-    sents <- split_sentences(line)
+write_sentences <- function(line, sentences.file, annotator) {
+    sents <- split_sentences(line, annotator)
     sents <- sapply(sents, clean_sentence)
     write(sents, sentences.file)
 }
@@ -116,6 +110,27 @@ write_unigrams <- function(sentence, unigrams.file) {
      write(tokens, unigrams.file)
 }
 
+sentence_from_start_and_end <- function(start, end) {
+    paste(unigrams[start:end], collapse = " ")
+}
+
+replace_with_unk <- function(word) {
+    if (word %in% words_to_replace) {
+        # Remove found word from list of words to replace to make
+        # the search faster
+        words_to_replace <- words_to_replace[!words_to_replace==word]
+        "<UNK>"
+    } else {
+        word
+    }
+}
+
+# MAIN BODY
+
+corpus <- get_clean_corpus(sandbox = SANDBOX)
+
+sent_token_annotator <- Maxent_Sent_Token_Annotator()
+
 dir.create(paste(base.dir, "sentences", sep = "/"))
 
 if (!file.exists(paste(base.dir, "sentences/sentences.txt", sep = "/"))) {
@@ -124,7 +139,7 @@ if (!file.exists(paste(base.dir, "sentences/sentences.txt", sep = "/"))) {
     for (doc in seq_along(corpus)) {
         for (line in seq_along(content(corpus[[doc]]))) {
             line <- content(corpus[[doc]])[line]
-            write_sentences(line, sentences)
+            write_sentences(line, sentences, sent_token_annotator)
         }
     }
     close(sentences)
@@ -132,34 +147,34 @@ if (!file.exists(paste(base.dir, "sentences/sentences.txt", sep = "/"))) {
 
 
 if (!file.exists(paste(base.dir, "sentences/train_sentences.txt", sep = "/"))) {
-    sentences.file <- paste(base.dir, "sentences/sentences.txt", sep = "/")
-    n_sentences <- count_lines(sentences.file)
+    # First divide into training and test datasets
+    sentences_file <- paste(base.dir, "sentences/sentences.txt", sep = "/")
+    n_sentences <- count_lines(sentences_file)
     set.seed(12345678)
-    training.indices <- createDataPartition(seq(1, n_sentences), p = 0.6)
-    training.indices <- training.indices[[1]]
+    training_indices <- createDataPartition(seq(1, n_sentences), p = 0.8)
+    training_indices <- training_indices[[1]]
 
-    train_sentences <- file(paste(base.dir, "sentences/train_sentences.txt", sep = "/"), "w")
-    test_sentences <- file(paste(base.dir, "sentences/test_sentences.txt", sep = "/"), "w")
-    sentences <- file(sentences.file, "r")
+    sentences <- readLines(sentences_file)
 
-    CHUNKSIZE <- 20000
+    train_sentences <- sentences[training_indices]
+    test_sentences <- sentences[-training_indices]
 
-    linesread <- readLines(sentences, CHUNKSIZE)
-    nolinesread_previous <- 0
-    while((nolinesread <- length(linesread)) > 0) {
-        adjusted_training_indices <- training.indices[
-                          training.indices <= nolinesread + nolinesread_previous]
-        adjusted_training_indices <- adjusted_training_indices - nolinesread_previous
-        adjusted_training_indices <- adjusted_training_indices[
-                                               adjusted_training_indices > 0]
-        write(linesread[adjusted_training_indices], train_sentences)
-        write(linesread[-adjusted_training_indices], test_sentences)
-        nolinesread_previous <- nolinesread_previous + nolinesread
-        linesread <- readLines(sentences, CHUNKSIZE)
-    }
-    close(sentences)
-    close(test_sentences)
-    close(train_sentences)
+    write(train_sentences, paste(base.dir, "sentences/train_sentences.txt", sep = "/"))
+    write(test_sentences, paste(base.dir, "sentences/test_sentences.txt", sep = "/"))
+
+    # Now divide the training sentences into training and validation datasets
+    sentences_file <- paste(base.dir, "sentences/train_sentences.txt", sep = "/")
+    n_sentences <- count_lines(sentences_file)
+    training_indices <- createDataPartition(seq(1, n_sentences), p = 0.8)
+    training_indices <- training_indices[[1]]
+
+    sentences <- readLines(sentences_file)
+
+    train_sentences <- sentences[training_indices]
+    validation_sentences <- sentences[-training_indices]
+
+    write(train_sentences, paste(base.dir, "sentences/train_sentences.txt", sep = "/"))
+    write(validation_sentences, paste(base.dir, "sentences/validation_sentences.txt", sep = "/"))
 }
 
 
@@ -175,16 +190,6 @@ words_table <- table(unigrams)
 words_to_replace <- names(words_table[words_table == 1])
 rm(words_table)
 
-replace_with_unk <- function(word) {
-    if (word %in% words_to_replace) {
-        # Remove found word from list of words to replace to make
-        # the search faster
-        words_to_replace <- words_to_replace[!words_to_replace==word]
-        "<UNK>"
-    } else {
-        word
-    }
-}
 
 unigrams <- sapply(unigrams, replace_with_unk)
 # Delete the names of the vector to save memory
@@ -195,9 +200,6 @@ write(unigrams, paste(base.dir, "ngrams/unigrams.txt", sep = "/"))
 # Build list of sentences from list of words
 start_of_sentences <- which(unigrams=="<s>")
 end_of_sentences <- which(unigrams=="</s>")
-sentence_from_start_and_end <- function(start, end) {
-    paste(unigrams[start:end], collapse = " ")
-}
 sentences <- mapply(sentence_from_start_and_end,
                     start_of_sentences,
                     end_of_sentences)
@@ -212,6 +214,3 @@ if (!file.exists(paste(base.dir, "ngrams/bigrams.txt", sep = "/"))) {
     trigrams.file <- file(paste(base.dir, "ngrams/trigrams.txt", sep = "/"), "w")
     sapply(sentences, write_ngrams, bigrams.file, trigrams.file)
 }
-
-# Clear the environment
-# rm(list = ls())
