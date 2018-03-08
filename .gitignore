@@ -43,3 +43,6 @@ notas.md
 
 # Ignore profiling logs
 *.out
+
+# Ignore PDF files
+*.pdf
